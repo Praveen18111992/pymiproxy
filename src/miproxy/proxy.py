@@ -11,6 +11,8 @@ from socket import socket
 from re import compile
 from sys import argv
 
+import socks
+
 from OpenSSL.crypto import (X509Extension, X509, dump_privatekey, dump_certificate, load_certificate, load_privatekey,
                             PKey, TYPE_RSA, X509Req)
 from OpenSSL.SSL import FILETYPE_PEM
@@ -153,10 +155,10 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     fragment=u.fragment
                 )
             )
-
         # Connect to destination
-        self._proxy_sock = socket()
+        self._proxy_sock = socks.socksocket() #socket()
         self._proxy_sock.settimeout(10)
+        self._proxy_sock.setproxy(socks.PROXY_TYPE_HTTP,"127.0.0.1", 8080)
         self._proxy_sock.connect((self.hostname, int(self.port)))
 
         # Wrap socket if SSL is required
@@ -273,7 +275,7 @@ class InvalidInterceptorPluginException(Exception):
 
 class MitmProxy(HTTPServer):
 
-    def __init__(self, server_address=('', 8080), RequestHandlerClass=ProxyHandler, bind_and_activate=True, ca_file='ca.pem'):
+    def __init__(self, server_address=('', 8081), RequestHandlerClass=ProxyHandler, bind_and_activate=True, ca_file='ca.pem'):
         HTTPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
         self.ca = CertificateAuthority(ca_file)
         self._res_plugins = []
